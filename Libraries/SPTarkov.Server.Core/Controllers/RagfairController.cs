@@ -779,11 +779,13 @@ public class RagfairController(
         {
             averageOfferPriceSingleItem = ragfairPriceService.GetPresetPriceByChildren(offer.Items);
         }
-
-        // Check for and apply item price modifer if it exists in config
-        if (RagfairConfig.Dynamic.ItemPriceMultiplier.TryGetValue(offerRootItem.Template, out var itemPriceModifer))
+        else
         {
-            averageOfferPriceSingleItem *= itemPriceModifer;
+            // Check for and apply item price modifer if it exists in config
+            if (RagfairConfig.Dynamic.ItemPriceMultiplier.TryGetValue(offerRootItem.Template, out var itemPriceModifer))
+            {
+                averageOfferPriceSingleItem *= itemPriceModifer;
+            }
         }
 
         // Multiply single item price by quality

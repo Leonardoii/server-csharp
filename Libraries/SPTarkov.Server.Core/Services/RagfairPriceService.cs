@@ -531,7 +531,7 @@ public class RagfairPriceService(
     /// </summary>
     /// <param name="weaponWithChildren">weapon plus mods</param>
     /// <returns>price of weapon in roubles</returns>
-    protected double GetPresetPriceByChildren(IEnumerable<Item> weaponWithChildren)
+    public double GetPresetPriceByChildren(IEnumerable<Item> weaponWithChildren)
     {
         var priceTotal = 0d;
         foreach (var item in weaponWithChildren)
