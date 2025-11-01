@@ -70,7 +70,7 @@ public class BotEquipmentModPoolService(
         while (itemsToProcess.TryDequeue(out var currentItem))
         {
             // Null guard / we've already processed this item
-            if (currentItem is null || !processedItems.Add(currentItem.Id))
+            if (!processedItems.Add(currentItem.Id))
             {
                 continue;
             }
@@ -86,15 +86,15 @@ public class BotEquipmentModPoolService(
 
             foreach (var slot in currentItem.Properties.Slots)
             {
-                var compatibleMods = slot?.Properties?.Filters?.FirstOrDefault()?.Filter;
-                if (compatibleMods is null || !compatibleMods.Any())
+                var compatibleMods = slot.Properties?.Filters?.FirstOrDefault()?.Filter;
+                if (compatibleMods is null || compatibleMods.Count == 0)
                 {
                     // No mod items in whitelist, skip
                     continue;
                 }
 
                 // Get or add set for this specific mod slot (e.g., "mod_scope").
-                var modItemPool = itemPool.GetOrAdd(slot.Name, []);
+                var modItemPool = itemPool.GetOrAdd(slot.Name!, []);
 
                 foreach (var modTpl in compatibleMods)
                 {
@@ -173,18 +173,18 @@ public class BotEquipmentModPoolService(
 
         // Get item from db
         var itemDb = itemHelper.GetItem(itemTpl).Value;
-        if (itemDb.Properties?.Slots is not null)
+        if (itemDb?.Properties?.Slots is not null)
         // Loop over slots flagged as 'required'
         {
             foreach (var slot in itemDb.Properties.Slots.Where(slot => slot.Required.GetValueOrDefault(false)))
             {
                 // Create dict entry for mod slot
-                result.TryAdd(slot.Name, []);
+                result.TryAdd(slot.Name!, []);
 
                 // Add compatible tpls to dicts hashset
-                foreach (var compatibleItemTpl in slot.Properties.Filters.FirstOrDefault().Filter)
+                foreach (var compatibleItemTpl in slot.Properties!.Filters!.FirstOrDefault()!.Filter!)
                 {
-                    result[slot.Name].Add(compatibleItemTpl);
+                    result[slot.Name!].Add(compatibleItemTpl);
                 }
             }
         }
