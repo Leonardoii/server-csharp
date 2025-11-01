@@ -61,7 +61,7 @@ public class AirdropService(
 
         // generate loot to put into airdrop crate
         var crateLootPool = airdropConfig.UseForcedLoot.GetValueOrDefault(false)
-            ? lootGenerator.CreateForcedLoot(airdropConfig.ForcedLoot)
+            ? lootGenerator.CreateForcedLoot(airdropConfig.ForcedLoot!)
             : lootGenerator.CreateRandomLoot(airdropConfig);
 
         // Create airdrop crate and add to result in first spot
@@ -91,7 +91,7 @@ public class AirdropService(
             }
         }
 
-        return new GetAirdropLootResponse { Icon = airdropConfig.Icon.Value, Container = containerWithLoot };
+        return new GetAirdropLootResponse { Icon = airdropConfig.Icon!.Value, Container = containerWithLoot };
     }
 
     /// <summary>
@@ -115,7 +115,7 @@ public class AirdropService(
             var itemSize = itemHelper.GetItemSize(itemAndChildren, itemAndChildren[0].Id);
 
             // Look for open slot to put chosen item into
-            var result = containerMap.FindSlotForItem(itemSize.Width, itemSize.Height);
+            var result = containerMap.FindSlotForItem(itemSize!.Width, itemSize.Height);
             if (result.Success.GetValueOrDefault(false))
             {
                 // It Fits, add item + children
@@ -123,8 +123,8 @@ public class AirdropService(
 
                 // Update container with item we just added
                 containerMap.TryFillContainerMapWithItem(
-                    result.X.Value,
-                    result.Y.Value,
+                    result.X!.Value,
+                    result.Y!.Value,
                     itemSize.Width,
                     itemSize.Height,
                     result.Rotation.GetValueOrDefault(false),
@@ -207,7 +207,7 @@ public class AirdropService(
     /// <returns>LootRequest</returns>
     protected AirdropLootRequest GetAirdropLootConfigByType(SptAirdropTypeEnum? airdropType)
     {
-        if (!AirdropConfig.Loot.TryGetValue(airdropType.ToString(), out var lootSettingsByType))
+        if (!AirdropConfig.Loot.TryGetValue(airdropType.ToString() ?? string.Empty, out var lootSettingsByType))
         {
             logger.Error(serverLocalisationService.GetText("location-unable_to_find_airdrop_drop_config_of_type", airdropType));
 
