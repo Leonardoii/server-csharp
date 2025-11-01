@@ -178,7 +178,7 @@ public class RagfairController(
     private void SetTraderOfferStackSize(RagfairOffer offer)
     {
         var firstItem = offer.Items[0];
-        var traderAssorts = traderHelper.GetTraderAssortsByTraderId(offer.User.Id).Items;
+        var traderAssorts = traderHelper.GetTraderAssortsByTraderId(offer.User.Id)?.Items ?? [];
 
         var assortPurchased = traderAssorts?.FirstOrDefault(x => x.Id == offer.Items.First().Id);
         if (assortPurchased is null)

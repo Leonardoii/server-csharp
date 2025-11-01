@@ -58,7 +58,7 @@ public class RagfairOfferHelper(
     public List<RagfairOffer> GetValidOffers(
         SearchRequestData searchRequest,
         HashSet<MongoId> itemsToAdd,
-        Dictionary<MongoId, TraderAssort> traderAssorts,
+        Dictionary<MongoId, TraderAssort?> traderAssorts,
         PmcData pmcData
     )
     {
