@@ -71,6 +71,13 @@ public static class Program
         // Create web builder and logger
         var builder = CreateNewHostBuilder();
 
+#if DEBUG
+        builder.Host.UseDefaultServiceProvider(options =>
+        {
+            options.ValidateOnBuild = true;
+            options.ValidateScopes = true;
+        });
+#endif
         var diHandler = new DependencyInjectionHandler(builder.Services);
         // register SPT components
         diHandler.AddInjectableTypesFromTypeAssembly(typeof(Program));
