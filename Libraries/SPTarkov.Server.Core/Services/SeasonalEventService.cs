@@ -651,6 +651,9 @@ public class SeasonalEventService(
                 );
                 if (matchingBaseSettings is null)
                 {
+                    // Doesn't exist, add it
+                    locationBase.Base.BotLocationModifier.AdditionalHostilitySettings.Append(settings);
+
                     continue;
                 }
 
