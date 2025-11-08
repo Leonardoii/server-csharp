@@ -7,14 +7,14 @@ using Range = SemanticVersioning.Range;
 namespace SPTarkov.Server.Core.Migration.Migrations;
 
 [Injectable]
-public class ThreeElevenToFourZero(Watermark watermark) : AbstractProfileMigration
+public sealed class ThreeElevenToFourZero(Watermark watermark) : AbstractProfileMigration
 {
-    public override string FromVersion
+    public string FromVersion
     {
         get { return "~3.11"; }
     }
 
-    public override string ToVersion
+    public string ToVersion
     {
         get { return "4.0"; }
     }

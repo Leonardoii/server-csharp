@@ -9,16 +9,11 @@ namespace SPTarkov.Server.Core.Migration.Migrations;
 /// In 0.16.1.3.35312 BSG changed this to from an int to a hex64 encoded value.
 /// </summary>
 [Injectable]
-public class HideoutSeed : AbstractProfileMigration
+public sealed class HideoutSeed : AbstractProfileMigration
 {
-    public override string FromVersion
+    public string FromVersion
     {
         get { return "~3.10"; }
-    }
-
-    public override string ToVersion
-    {
-        get { return "3.11"; }
     }
 
     public override string MigrationName

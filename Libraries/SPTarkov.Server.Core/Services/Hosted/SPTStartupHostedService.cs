@@ -1,34 +1,44 @@
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Extensions;
+using SPTarkov.Server.Core.Loaders;
+using SPTarkov.Server.Core.Models.Spt.Logging;
+using SPTarkov.Server.Core.Models.Spt.Mod;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Servers;
-using SPTarkov.Server.Core.Services;
+using SPTarkov.Server.Core.Utils;
 using static SPTarkov.Server.Core.Extensions.StringExtensions;
-using LogLevel = SPTarkov.Server.Core.Models.Spt.Logging.LogLevel;
 
-namespace SPTarkov.Server.Core.Utils;
+namespace SPTarkov.Server.Core.Services.Hosted;
 
-[Injectable(InjectionType.Singleton)]
-public class App(
-    IServiceProvider serviceProvider,
-    ISptLogger<App> logger,
+[Injectable(InjectionType.HostedService)]
+public sealed class SPTStartupHostedService(
+    IReadOnlyList<SptMod> loadedMods,
+    BundleLoader bundleLoader,
     TimeUtil timeUtil,
     RandomUtil randomUtil,
     ServerLocalisationService serverLocalisationService,
     HttpServer httpServer,
-    DatabaseService databaseService,
-    IHostApplicationLifetime appLifeTime,
+    ISptLogger<SPTStartupHostedService> logger,
     IEnumerable<IOnLoad> onLoadComponents,
     IEnumerable<IOnUpdate> onUpdateComponents
-)
+) : BackgroundService
 {
-    protected readonly Dictionary<string, long> _onUpdateLastRun = new();
+    private readonly Dictionary<string, long> _onUpdateLastRun = [];
 
-    public async Task InitializeAsync()
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        ServiceLocator.SetServiceProvider(serviceProvider);
+        if (ProgramStatics.MODS())
+        {
+            foreach (var mod in loadedMods)
+            {
+                if (mod.ModMetadata.IsBundleMod == true)
+                {
+                    await bundleLoader.LoadBundlesAsync(mod).ConfigureAwait(false);
+                }
+            }
+        }
 
         if (logger.IsLogEnabled(LogLevel.Debug))
         {
@@ -60,31 +70,17 @@ public class App(
         logger.Info(serverLocalisationService.GetText("executing_startup_callbacks"));
         foreach (var onLoad in onLoadComponents)
         {
-            await onLoad.OnLoad();
+            await onLoad.OnLoad(stoppingToken).ConfigureAwait(false);
         }
-
-        // Discard here, as this task will run indefinitely
-        _ = Task.Run(Update);
 
         logger.Success(serverLocalisationService.GetText("started_webserver_success", httpServer.ListeningUrl()));
         logger.Success(serverLocalisationService.GetText("websocket-started", httpServer.ListeningUrl().Replace("https://", "wss://")));
 
         logger.Success(GetRandomisedStartMessage());
-    }
 
-    protected string GetRandomisedStartMessage()
-    {
-        if (randomUtil.GetInt(1, 1000) > 999)
-        {
-            return serverLocalisationService.GetRandomTextThatMatchesPartialKey("server_start_meme_");
-        }
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
 
-        return serverLocalisationService.GetText("server_start_success");
-    }
-
-    protected async Task Update()
-    {
-        while (!appLifeTime.ApplicationStopping.IsCancellationRequested)
+        while (!stoppingToken.IsCancellationRequested)
         {
             foreach (var updateable in onUpdateComponents)
             {
@@ -99,7 +95,7 @@ public class App(
 
                 try
                 {
-                    if (await updateable.OnUpdate(secondsSinceLastRun))
+                    if (await updateable.OnUpdate(stoppingToken, secondsSinceLastRun).ConfigureAwait(false))
                     {
                         _onUpdateLastRun[updateableName] = timeUtil.GetTimeStamp();
                     }
@@ -110,11 +106,21 @@ public class App(
                 }
             }
 
-            await Task.Delay(5000, appLifeTime.ApplicationStopping);
+            await timer.WaitForNextTickAsync(stoppingToken);
         }
     }
 
-    protected void LogUpdateException(Exception err, IOnUpdate updateable)
+    private string GetRandomisedStartMessage()
+    {
+        if (randomUtil.GetInt(1, 1000) > 999)
+        {
+            return serverLocalisationService.GetRandomTextThatMatchesPartialKey("server_start_meme_");
+        }
+
+        return serverLocalisationService.GetText("server_start_success");
+    }
+
+    private void LogUpdateException(Exception err, IOnUpdate updateable)
     {
         logger.Error(serverLocalisationService.GetText("scheduled_event_failed_to_run", updateable.GetType().FullName));
         logger.Error(err.ToString());

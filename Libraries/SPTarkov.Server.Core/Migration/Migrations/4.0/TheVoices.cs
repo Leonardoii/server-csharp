@@ -8,21 +8,11 @@ namespace SPTarkov.Server.Core.Migration.Migrations;
 /// In 16.8.0.37972 BSG added customization for voices, technically this only affects BE profiles, but this should fix these.
 /// </summary>
 [Injectable]
-public class TheVoices(DatabaseService databaseService) : AbstractProfileMigration
+public sealed class TheVoices(DatabaseService databaseService) : AbstractProfileMigration
 {
     private bool _pmcVoiceIsMissing = false;
     private bool _scavVoiceIsMissing = false;
     private bool _hasScavVoiceFromPreviousSPTVer = false;
-
-    public override string FromVersion
-    {
-        get { return "~4.0"; }
-    }
-
-    public override string ToVersion
-    {
-        get { return "~4.0"; }
-    }
 
     public override string MigrationName
     {

@@ -15,6 +15,7 @@ using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Spt.Mod;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Servers;
+using SPTarkov.Server.Core.Services.Hosted;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Logger;
 using SPTarkov.Server.Logger;
@@ -71,10 +72,17 @@ public static class Program
         // Create web builder and logger
         var builder = CreateNewHostBuilder();
 
+#if DEBUG
+        builder.Host.UseDefaultServiceProvider(options =>
+        {
+            options.ValidateOnBuild = true;
+            options.ValidateScopes = true;
+        });
+#endif
         var diHandler = new DependencyInjectionHandler(builder.Services);
         // register SPT components
         diHandler.AddInjectableTypesFromTypeAssembly(typeof(Program));
-        diHandler.AddInjectableTypesFromTypeAssembly(typeof(App));
+        diHandler.AddInjectableTypesFromTypeAssembly(typeof(SPTStartupHostedService));
         diHandler.AddInjectableTypesFromTypeAssembly(typeof(PatchManager));
 
         List<SptMod> loadedMods = [];
@@ -107,7 +115,7 @@ public static class Program
         // In case of exceptions we snatch a Server logger
         var serverExceptionLogger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Server");
         // We need any logger instance to use as a finalizer when the app closes
-        var loggerFinalizer = app.Services.GetRequiredService<ISptLogger<App>>();
+        var loggerFinalizer = app.Services.GetRequiredService<ISptLogger<SPTStartupHostedService>>();
         try
         {
             // Handle edge cases where reverse proxies might pass X-Forwarded-For, use this as the actual IP address
@@ -121,8 +129,6 @@ public static class Program
             app.UseForwardedHeaders(forwardedHeadersOptions);
 
             SetConsoleOutputMode();
-
-            await app.Services.GetRequiredService<SptServerStartupService>().Startup();
 
             await app.RunAsync();
         }
@@ -219,7 +225,7 @@ public static class Program
         // register SPT components
         var diHandler = new DependencyInjectionHandler(builder.Services);
         diHandler.AddInjectableTypesFromAssembly(typeof(Program).Assembly);
-        diHandler.AddInjectableTypesFromAssembly(typeof(App).Assembly);
+        diHandler.AddInjectableTypesFromAssembly(typeof(SPTStartupHostedService).Assembly);
         diHandler.InjectAll();
         // register the mod validator components
         var provider = builder

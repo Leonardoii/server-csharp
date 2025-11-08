@@ -7,18 +7,8 @@ namespace SPTarkov.Server.Core.Migration.Migrations;
 /// Password property was removed from profile.info in 4.0
 /// </summary>
 [Injectable]
-public class RemovePassword : AbstractProfileMigration
+public sealed class RemovePassword : AbstractProfileMigration
 {
-    public override string FromVersion
-    {
-        get { return "~3.11"; }
-    }
-
-    public override string ToVersion
-    {
-        get { return "4.0"; }
-    }
-
     public override string MigrationName
     {
         get { return "RemovePassword-SPTSharp"; }
